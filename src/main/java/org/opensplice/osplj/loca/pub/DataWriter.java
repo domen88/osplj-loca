@@ -70,9 +70,18 @@ public class DataWriter<T> implements org.omg.dds.pub.DataWriter<T>{
 
         try {
 
+            Class loca = Class.forName("LocationAware");
+            Object locaObject = loca.newInstance();
+
+            Field lat = loca.getField("latitude");
+            Field lon = loca.getField("longitude");
+
+            lat.set(locaObject, l.getLatitude());
+            lon.set(locaObject, l.getLongitude());
+
             Object o = delegateClass.newInstance();
 
-            loc.set(o, l);
+            loc.set(o, locaObject);
             val.set(o, sample);
 
             this.delegate.write(o);
@@ -80,6 +89,10 @@ public class DataWriter<T> implements org.omg.dds.pub.DataWriter<T>{
         } catch (InstantiationException e) {
             e.printStackTrace();
         } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        } catch (NoSuchFieldException e) {
             e.printStackTrace();
         }
 
