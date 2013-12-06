@@ -18,80 +18,92 @@ import org.omg.dds.sub.InstanceState;
 import org.omg.dds.sub.Sample;
 import org.omg.dds.sub.SampleState;
 import org.omg.dds.sub.ViewState;
+import org.opensplice.osplj.domain.DomainParticipantFactoryImpl;
+import org.opensplice.osplj.sub.SampleData;
+
+
 
 public class LocationAwareSample<T> implements Sample<T> {
 
-    //private final Sample<Object> delegate;
+    private SampleData<Object> delegatedata;
+    private SampleInfo delegateinfo;
 
+    public LocationAwareSample(SampleData<Object> sample){
+
+
+
+        this.delegatedata = sample;
+        this.delegateinfo =
+    }
 
 
     @Override
     public T getData() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (T)this.delegatedata.getData();
     }
 
     @Override
     public SampleState getSampleState() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this.delegateinfo.sampleState;
     }
 
     @Override
     public ViewState getViewState() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this.delegateinfo.viewState;
     }
 
     @Override
     public InstanceState getInstanceState() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this.delegateinfo.instanceState;
     }
 
     @Override
     public Time getSourceTimestamp() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this.delegatedata.getSourceTimestamp();
     }
 
     @Override
     public InstanceHandle getInstanceHandle() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this.delegateinfo.instanceHandle;
     }
 
     @Override
     public InstanceHandle getPublicationHandle() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public int getDisposedGenerationCount() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public int getNoWritersGenerationCount() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public int getSampleRank() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public int getGenerationRank() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public int getAbsoluteGenerationRank() {
-        return 0;  //To change body of implemented methods use File | Settings | File Templates.
+        throw new UnsupportedOperationException("Not implemented");
     }
 
     @Override
     public Sample<T> clone() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return new LocationAwareSample<T>((SampleData<Object>)this.delegatedata, this.delegateinfo);
     }
 
     @Override
     public ServiceEnvironment getEnvironment() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return DomainParticipantFactoryImpl.getServiceEnvironment();
     }
 }

@@ -22,13 +22,12 @@ import org.omg.dds.topic.PublicationBuiltinTopicData;
 import org.omg.dds.topic.Topic;
 import org.omg.dds.topic.TopicDescription;
 import org.opensplice.osplj.loca.core.LocationProvider;
+import org.opensplice.osplj.sub.SampleData;
 import org.opensplice.osplj.utils.JavaScriptFilter;
 
 import javax.script.ScriptException;
 import java.lang.reflect.Field;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
@@ -183,7 +182,23 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
     @Override
     public Sample.Iterator<T> read() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+
+
+        Iterator<Sample<Object>> it = delegate.read();
+        List<LocationAwareSample<T>> l = new ArrayList<LocationAwareSample<T>>();
+        Sample<Object> sample;
+
+        while (it.hasNext()) {
+
+            sample = (Sample<Object>) it;
+            l.add(new LocationAwareSample<T>((SampleData<Object>) sample));
+            it.next();
+
+
+        }
+
+
+        return null;
     }
 
     @Override
