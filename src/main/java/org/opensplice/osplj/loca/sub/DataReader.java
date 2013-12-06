@@ -186,12 +186,32 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
         Iterator<Sample<Object>> it = delegate.read();
         List<LocationAwareSample<T>> l = new ArrayList<LocationAwareSample<T>>();
-        Sample<Object> sample;
 
         while (it.hasNext()) {
 
-            sample = (Sample<Object>) it;
-            l.add(new LocationAwareSample<T>((SampleData<Object>) sample));
+            Sample<Object> sample = (Sample<Object>) it;
+
+            Object loc = new Object();
+            Object val = new Object();
+
+
+            try{
+
+                Object o = sample.getData();
+
+                Field location = o.getClass().getField("l");
+                Field value = o.getClass().getField("v");
+
+                location.get(loc);
+                value.get(val);
+
+            } catch (NoSuchFieldException e){
+                e.printStackTrace();
+            } catch (IllegalAccessException e){
+                e.printStackTrace();
+            }
+
+            l.add(new LocationAwareSample<T>(loc, val, (SampleData) sample));
             it.next();
 
 

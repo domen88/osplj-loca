@@ -28,12 +28,12 @@ public class LocationAwareSample<T> implements Sample<T> {
     private SampleData<Object> delegatedata;
     private SampleInfo delegateinfo;
 
-    public LocationAwareSample(SampleData<Object> sample){
+    public LocationAwareSample(Object loc, Object val, SampleData<Object> sdata){
 
 
 
-        this.delegatedata = sample;
-        this.delegateinfo =
+        this.delegatedata = sdata;
+        this.delegateinfo = ;
     }
 
 
