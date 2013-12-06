@@ -9,9 +9,7 @@
  *    for full copyright notice and license terms.
  */
 
-package org.opensplice.osplj.loca.pub;
-
-import org.opensplice.osplj.loca.core.LocationData;
+package org.opensplice.osplj.loca.core;
 
 public abstract class LocationProvider {
 

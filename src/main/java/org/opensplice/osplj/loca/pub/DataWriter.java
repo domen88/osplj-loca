@@ -11,7 +11,6 @@
 
 package org.opensplice.osplj.loca.pub;
 
-import android.util.Log;
 import org.omg.dds.core.*;
 import org.opensplice.osplj.loca.core.LocationData;
 import org.omg.dds.core.status.*;
@@ -20,6 +19,7 @@ import org.omg.dds.pub.DataWriterQos;
 import org.omg.dds.pub.Publisher;
 import org.omg.dds.topic.SubscriptionBuiltinTopicData;
 import org.omg.dds.topic.Topic;
+import org.opensplice.osplj.loca.core.LocationProvider;
 
 import java.lang.reflect.Field;
 import java.util.Collection;

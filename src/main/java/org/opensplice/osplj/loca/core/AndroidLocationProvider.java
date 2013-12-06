@@ -9,7 +9,7 @@
  *    for full copyright notice and license terms.
  */
 
-package org.opensplice.osplj.loca.pub;
+package org.opensplice.osplj.loca.core;
 
 import android.content.Context;
 import android.app.Application;
@@ -19,6 +19,7 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.os.Bundle;
 import org.opensplice.osplj.loca.core.LocationData;
+import org.opensplice.osplj.loca.core.LocationProvider;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
