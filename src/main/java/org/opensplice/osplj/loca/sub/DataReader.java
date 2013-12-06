@@ -1,3 +1,14 @@
+/**
+ *                         OpenSplice For Java
+ *
+ *    This software and documentation are Copyright 2010 to 2013 PrismTech
+ *    Limited and its licensees. All rights reserved. See file:
+ *
+ *                           docs/LICENSE.html
+ *
+ *    for full copyright notice and license terms.
+ */
+
 package org.opensplice.osplj.loca.sub;
 
 import org.omg.dds.core.Duration;
@@ -21,13 +32,7 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-/**
- * Created with IntelliJ IDEA.
- * User: domenicoscotece
- * Date: 06/12/13
- * Time: 10:55
- * To change this template use File | Settings | File Templates.
- */
+
 public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
     private final static String TYPE_SUFFIX = "__locationAware";

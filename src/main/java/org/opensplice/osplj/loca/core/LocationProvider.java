@@ -17,7 +17,7 @@ public abstract class LocationProvider {
 
     public static LocationProvider create() {
 
-        String p = "org.opensplice.osplj.loca.pub." + System.getProperty(PROPERTY);
+        String p = "org.opensplice.osplj.loca.core." + System.getProperty(PROPERTY);
 
         try {
 

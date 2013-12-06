@@ -1,3 +1,14 @@
+/**
+ *                         OpenSplice For Java
+ *
+ *    This software and documentation are Copyright 2010 to 2013 PrismTech
+ *    Limited and its licensees. All rights reserved. See file:
+ *
+ *                           docs/LICENSE.html
+ *
+ *    for full copyright notice and license terms.
+ */
+
 package org.opensplice.osplj.loca.sub;
 
 import org.omg.dds.core.InstanceHandle;
@@ -8,13 +19,6 @@ import org.omg.dds.sub.Sample;
 import org.omg.dds.sub.SampleState;
 import org.omg.dds.sub.ViewState;
 
-/**
- * Created with IntelliJ IDEA.
- * User: domenicoscotece
- * Date: 06/12/13
- * Time: 11:17
- * To change this template use File | Settings | File Templates.
- */
 public class LocationAwareSample<T> implements Sample<T> {
 
     //private final Sample<Object> delegate;
