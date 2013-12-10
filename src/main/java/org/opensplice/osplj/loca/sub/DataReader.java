@@ -22,7 +22,8 @@ import org.omg.dds.topic.PublicationBuiltinTopicData;
 import org.omg.dds.topic.Topic;
 import org.omg.dds.topic.TopicDescription;
 import org.opensplice.osplj.loca.core.LocationProvider;
-import org.opensplice.osplj.sub.SampleData;
+import org.opensplice.osplj.sub.ReaderHistoryCache;
+import org.opensplice.osplj.sub.SampleImpl;
 import org.opensplice.osplj.utils.JavaScriptFilter;
 
 import javax.script.ScriptException;
@@ -36,6 +37,7 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
     private final static String TYPE_SUFFIX = "__locationAware";
     private final org.omg.dds.sub.DataReader<Object> delegate;
+    private final String topicType;
     private Class<?> delegateClass;
     private Field loc;
     private Field val;
@@ -43,7 +45,11 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
     private final PolicyFactory pf = PolicyFactory.getPolicyFactory(getEnvironment());
     private final DataReaderQos drqos;
 
-    public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocationProvider lp){
+    public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos) {
+        this(sub, topic, qos, LocationProvider.create());
+    }
+
+    public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocationProvider lp) {
 
         DataReaderQos drqos1;
 
@@ -51,15 +57,16 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
         String delegateType = topic.getTypeName() + TYPE_SUFFIX;
 
-        try {
-            delegateClass = Class.forName(delegateType);
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
-        }
+        this.topicType = topic.getTypeName();
 
         try {
+
+            delegateClass = Class.forName(delegateType);
             loc = delegateClass.getField("l");
             val = delegateClass.getField("v");
+
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         }
@@ -67,6 +74,8 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
         Topic<?> tp = sub.getParent().createTopic(topic.getName() + TYPE_SUFFIX, delegateClass);//, topic.getQos(), null,
         //null);
 
+
+        /* -------------------------JAVASCRIPT FILTER----------------------------*/
         try {
 
             drqos1 = qos.withPolicies(
@@ -81,14 +90,10 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
             drqos1 = qos;
         }
 
-
         drqos = drqos1;
-        this.delegate = (org.omg.dds.sub.DataReader<Object>)sub.createDataReader(topic,drqos);
+        this.delegate = (org.omg.dds.sub.DataReader<Object>)sub.createDataReader(tp,drqos);
 
     }
-
-
-
 
     @Override
     public <OTHER> org.omg.dds.sub.DataReader<OTHER> cast() {
@@ -189,11 +194,10 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
         while (it.hasNext()) {
 
-            Sample<Object> sample = (Sample<Object>) it;
+            Sample<Object> sample = it.next();
 
             Object loc = new Object();
             Object val = new Object();
-
 
             try{
 
@@ -205,20 +209,21 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
                 location.get(loc);
                 value.get(val);
 
-            } catch (NoSuchFieldException e){
+            } catch (NoSuchFieldException e) {
                 e.printStackTrace();
-            } catch (IllegalAccessException e){
+            } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
 
-            l.add(new LocationAwareSample<T>(loc, val, (SampleData) sample));
-            it.next();
+            SampleState ss = sample.getSampleState();
 
+            l.add(new LocationAwareSample<T>(loc, val, ss,
+                    (ReaderHistoryCache.ReaderInstance)delegate, topicType));
 
         }
 
+        return new LocationAwareSample.LocationAwareIterator<T>(l);
 
-        return null;
     }
 
     @Override

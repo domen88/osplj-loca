@@ -58,8 +58,8 @@ public class DataWriter<T> implements org.omg.dds.pub.DataWriter<T>{
             e.printStackTrace();
         }
 
-        Topic<?> tp = pub.getParent().createTopic(topic.getName() + TYPE_SUFFIX, delegateClass);//, topic.getQos(), null,
-               //null);
+        Topic<?> tp = pub.getParent().createTopic(topic.getName() + TYPE_SUFFIX, delegateClass); //, topic.getQos(), null,
+              //null);
 
 
         this.delegate = (org.omg.dds.pub.DataWriter<Object>)pub.createDataWriter(tp, qos);
