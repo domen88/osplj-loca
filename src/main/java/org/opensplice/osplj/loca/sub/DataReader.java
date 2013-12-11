@@ -11,10 +11,12 @@
 
 package org.opensplice.osplj.loca.sub;
 
+import android.util.Log;
 import org.omg.dds.core.Duration;
 import org.omg.dds.core.InstanceHandle;
 import org.omg.dds.core.ServiceEnvironment;
 import org.omg.dds.core.StatusCondition;
+import org.omg.dds.core.policy.ContentFilter;
 import org.omg.dds.core.policy.PolicyFactory;
 import org.omg.dds.core.status.*;
 import org.omg.dds.sub.*;
@@ -23,7 +25,6 @@ import org.omg.dds.topic.Topic;
 import org.omg.dds.topic.TopicDescription;
 import org.opensplice.osplj.loca.core.LocationProvider;
 import org.opensplice.osplj.sub.ReaderHistoryCache;
-import org.opensplice.osplj.sub.SampleImpl;
 import org.opensplice.osplj.utils.JavaScriptFilter;
 
 import javax.script.ScriptException;
@@ -42,8 +43,7 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
     private Field loc;
     private Field val;
     private final LocationProvider lp;
-    private final PolicyFactory pf = PolicyFactory.getPolicyFactory(getEnvironment());
-    private final DataReaderQos drqos;
+    //private final DataReaderQos drqos;
 
     public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos) {
         this(sub, topic, qos, LocationProvider.create());
@@ -51,7 +51,8 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
     public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocationProvider lp) {
 
-        DataReaderQos drqos1;
+
+        DataReaderQos drqos1 = null;
 
         this.lp = lp;
 
@@ -67,32 +68,33 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
+            Log.d("AAA","DataReader constructor");
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
+            Log.d("BBB","DataReader constructor");
         }
 
         Topic<?> tp = sub.getParent().createTopic(topic.getName() + TYPE_SUFFIX, delegateClass);//, topic.getQos(), null,
         //null);
 
-
         /* -------------------------JAVASCRIPT FILTER----------------------------*/
-        try {
+//        try {
+//
+//            ContentFilter filter =
+//            PolicyFactory.getPolicyFactory(getEnvironment()) .ContentFilter()
+//                    .withFilter(
+//                            new JavaScriptFilter<T>("data.ID==params[0]"));
+//
+//            drqos1.withPolicies(filter);
+//
+//        } catch (ScriptException e) {
+//           e.printStackTrace();
+//           drqos1 = qos;
+//        }
+//
+//        drqos = drqos1;
 
-            drqos1 = qos.withPolicies(
-                    pf.ContentFilter()
-                            .withFilter(
-                                    new JavaScriptFilter<Object>("MY_CONDITION")
-                            )
-                    );
-
-        } catch (ScriptException e){
-            e.printStackTrace();
-            drqos1 = qos;
-        }
-
-        drqos = drqos1;
-        this.delegate = (org.omg.dds.sub.DataReader<Object>)sub.createDataReader(tp,drqos);
-
+        this.delegate = (org.omg.dds.sub.DataReader<Object>)sub.createDataReader(tp,qos);
     }
 
     @Override
@@ -206,8 +208,8 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
                 Field location = o.getClass().getField("l");
                 Field value = o.getClass().getField("v");
 
-                location.get(loc);
-                value.get(val);
+                loc = location.get(o);
+                val = value.get(o);
 
             } catch (NoSuchFieldException e) {
                 e.printStackTrace();
@@ -228,47 +230,47 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
     @Override
     public Sample.Iterator<T> read(Selector<T> tSelector) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Sample.Iterator<T>)this.delegate.read((Selector<Object>) tSelector);
     }
 
     @Override
     public Sample.Iterator<T> read(int i) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Sample.Iterator<T>)this.delegate.read(i);
     }
 
     @Override
     public List<Sample<T>> read(List<Sample<T>> samples) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (List<Sample<T>>) this.delegate.read((Selector<Object>) samples);
     }
 
     @Override
     public List<Sample<T>> read(List<Sample<T>> samples, Selector<T> tSelector) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this.read(samples);    //DA FARE
     }
 
     @Override
     public Sample.Iterator<T> take() {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Sample.Iterator<T>) this.delegate.take();
     }
 
     @Override
     public Sample.Iterator<T> take(int i) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Sample.Iterator<T>) this.delegate.take(i);
     }
 
     @Override
     public Sample.Iterator<T> take(Selector<T> tSelector) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (Sample.Iterator<T>) this.delegate.take((List<Sample<Object>>) tSelector);
     }
 
     @Override
     public List<Sample<T>> take(List<Sample<T>> samples) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return (List<Sample<T>>) this.delegate.take((Selector<Object>)samples);
     }
 
     @Override
     public List<Sample<T>> take(List<Sample<T>> samples, Selector<T> tSelector) {
-        return null;  //To change body of implemented methods use File | Settings | File Templates.
+        return this.take(samples);      //DA FARE
     }
 
     @Override

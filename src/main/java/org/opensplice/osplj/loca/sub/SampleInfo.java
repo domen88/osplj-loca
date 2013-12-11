@@ -1,3 +1,13 @@
+/**
+ *                         OpenSplice For Java
+ *
+ *    This software and documentation are Copyright 2010 to 2013 PrismTech
+ *    Limited and its licensees. All rights reserved. See file:
+ *
+ *                           docs/LICENSE.html
+ *
+ *    for full copyright notice and license terms.
+ */
 package org.opensplice.osplj.loca.sub;
 
 import org.omg.dds.core.InstanceHandle;
@@ -8,13 +18,7 @@ import org.opensplice.osplj.sub.ReaderHistoryCache;
 
 import java.io.Serializable;
 
-/**
- * Created with IntelliJ IDEA.
- * User: domenicoscotece
- * Date: 06/12/13
- * Time: 12:50
- * To change this template use File | Settings | File Templates.
- */
+
 public class SampleInfo implements Serializable
 {
     private static final long serialVersionUID = -80270764719817525L;
