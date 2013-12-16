@@ -16,15 +16,19 @@ import org.omg.dds.core.Duration;
 import org.omg.dds.core.InstanceHandle;
 import org.omg.dds.core.ServiceEnvironment;
 import org.omg.dds.core.StatusCondition;
+import org.omg.dds.core.event.*;
 import org.omg.dds.core.policy.ContentFilter;
 import org.omg.dds.core.policy.PolicyFactory;
 import org.omg.dds.core.status.*;
 import org.omg.dds.sub.*;
+import org.omg.dds.sub.DataReaderListener;
 import org.omg.dds.topic.PublicationBuiltinTopicData;
 import org.omg.dds.topic.Topic;
 import org.omg.dds.topic.TopicDescription;
+import org.opensplice.osplj.loca.core.DataAvailableEventLoc;
 import org.opensplice.osplj.loca.core.LocationProvider;
 import org.opensplice.osplj.sub.ReaderHistoryCache;
+import org.opensplice.osplj.sub.SampleData;
 import org.opensplice.osplj.utils.JavaScriptFilter;
 
 import javax.script.ScriptException;
@@ -43,7 +47,7 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
     private Field loc;
     private Field val;
     private final LocationProvider lp;
-    //private final DataReaderQos drqos;
+    private final DataReaderQos drqos;
 
     public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos) {
         this(sub, topic, qos, LocationProvider.create());
@@ -52,7 +56,7 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
     public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocationProvider lp) {
 
 
-        DataReaderQos drqos1 = null;
+        this.drqos = qos;
 
         this.lp = lp;
 
@@ -68,10 +72,8 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
-            Log.d("AAA","DataReader constructor");
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
-            Log.d("BBB","DataReader constructor");
         }
 
         Topic<?> tp = sub.getParent().createTopic(topic.getName() + TYPE_SUFFIX, delegateClass);//, topic.getQos(), null,
@@ -85,16 +87,15 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 //                    .withFilter(
 //                            new JavaScriptFilter<T>("data.ID==params[0]"));
 //
-//            drqos1.withPolicies(filter);
+//            drqos.withPolicies(filter);
 //
 //        } catch (ScriptException e) {
 //           e.printStackTrace();
-//           drqos1 = qos;
 //        }
 //
-//        drqos = drqos1;
 
-        this.delegate = (org.omg.dds.sub.DataReader<Object>)sub.createDataReader(tp,qos);
+        this.delegate = (org.omg.dds.sub.DataReader<Object>)sub.createDataReader(tp,drqos);
+
     }
 
     @Override
@@ -203,13 +204,19 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
             try{
 
-                Object o = sample.getData();
+                if (sample.getData() != null) {
 
-                Field location = o.getClass().getField("l");
-                Field value = o.getClass().getField("v");
+                    Object o = sample.getData();
 
-                loc = location.get(o);
-                val = value.get(o);
+                    Field location = o.getClass().getField("l");
+                    Field value = o.getClass().getField("v");
+
+                    loc = location.get(o);
+                    val = value.get(o);
+
+                    l.add(new LocationAwareSample<T>(loc, val, topicType, sample, lp));
+
+                }
 
             } catch (NoSuchFieldException e) {
                 e.printStackTrace();
@@ -217,10 +224,6 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
                 e.printStackTrace();
             }
 
-            SampleState ss = sample.getSampleState();
-
-            l.add(new LocationAwareSample<T>(loc, val, ss,
-                    (ReaderHistoryCache.ReaderInstance)delegate, topicType));
 
         }
 
@@ -230,12 +233,82 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
     @Override
     public Sample.Iterator<T> read(Selector<T> tSelector) {
-        return (Sample.Iterator<T>)this.delegate.read((Selector<Object>) tSelector);
+
+        Iterator<Sample<Object>> it = delegate.read((Selector<Object>) tSelector);
+        List<LocationAwareSample<T>> l = new ArrayList<LocationAwareSample<T>>();
+
+        while (it.hasNext()) {
+
+            Sample<Object> sample = it.next();
+
+            Object loc = new Object();
+            Object val = new Object();
+
+            try{
+
+                if (sample.getData() != null) {
+
+                    Object o = sample.getData();
+
+                    Field location = o.getClass().getField("l");
+                    Field value = o.getClass().getField("v");
+
+                    loc = location.get(o);
+                    val = value.get(o);
+
+                    l.add(new LocationAwareSample<T>(loc, val, topicType, sample, lp));
+                }
+
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+        return new LocationAwareSample.LocationAwareIterator<T>(l);
     }
 
     @Override
     public Sample.Iterator<T> read(int i) {
-        return (Sample.Iterator<T>)this.delegate.read(i);
+
+        Iterator<Sample<Object>> it = delegate.read(i);
+        List<LocationAwareSample<T>> l = new ArrayList<LocationAwareSample<T>>();
+
+        while (it.hasNext()) {
+
+            Sample<Object> sample = it.next();
+
+            Object loc = new Object();
+            Object val = new Object();
+
+            try{
+
+                if (sample.getData() != null) {
+
+                    Object o = sample.getData();
+
+                    Field location = o.getClass().getField("l");
+                    Field value = o.getClass().getField("v");
+
+                    loc = location.get(o);
+                    val = value.get(o);
+
+                    l.add(new LocationAwareSample<T>(loc, val, topicType, sample, lp));
+                }
+
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+        return new LocationAwareSample.LocationAwareIterator<T>(l);
     }
 
     @Override
@@ -250,7 +323,42 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
     @Override
     public Sample.Iterator<T> take() {
-        return (Sample.Iterator<T>) this.delegate.take();
+
+        Iterator<Sample<Object>> it = delegate.take();
+        List<LocationAwareSample<T>> l = new ArrayList<LocationAwareSample<T>>();
+
+        while (it.hasNext()) {
+
+            Sample<Object> sample = it.next();
+
+            Object loc = new Object();
+            Object val = new Object();
+
+            try{
+
+                if (sample.getData() != null) {
+
+                    Object o = sample.getData();
+
+                    Field location = o.getClass().getField("l");
+                    Field value = o.getClass().getField("v");
+
+                    loc = location.get(o);
+                    val = value.get(o);
+
+                    l.add(new LocationAwareSample<T>(loc, val, topicType, sample, lp));
+                }
+
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+
+
+        }
+
+        return new LocationAwareSample.LocationAwareIterator<T>(l);
     }
 
     @Override
@@ -313,20 +421,79 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
         return (DataReaderListener<T>)this.delegate.getListener();
     }
 
+    public DataReader<T> getReader(){
+        return this;
+    }
+
+    public class LocationListener implements DataReaderListener<Object> {
+
+        private final DataReaderListener<T> dataReaderListener;
+
+        public LocationListener(DataReaderListener<T> tDataReaderListener){
+
+            this.dataReaderListener = tDataReaderListener;
+
+        }
+
+        @Override
+        public void onDataAvailable(DataAvailableEvent<Object> objectDataAvailableEvent) {
+
+            DataAvailableEventLoc dataAvailableEventLoc = new DataAvailableEventLoc(getReader(),
+                    objectDataAvailableEvent.getStatus());
+
+            this.dataReaderListener.onDataAvailable(dataAvailableEventLoc);
+
+        }
+
+        @Override
+        public void onRequestedDeadlineMissed(RequestedDeadlineMissedEvent<Object> objectRequestedDeadlineMissedEvent) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void onRequestedIncompatibleQos(RequestedIncompatibleQosEvent<Object> objectRequestedIncompatibleQosEvent) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void onSampleRejected(SampleRejectedEvent<Object> objectSampleRejectedEvent) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void onLivelinessChanged(LivelinessChangedEvent<Object> objectLivelinessChangedEvent) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void onSubscriptionMatched(SubscriptionMatchedEvent<Object> objectSubscriptionMatchedEvent) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+        @Override
+        public void onSampleLost(SampleLostEvent<Object> objectSampleLostEvent) {
+            //To change body of implemented methods use File | Settings | File Templates.
+        }
+
+    }
+
     @Override
     public void setListener(DataReaderListener<T> tDataReaderListener) {
-        this.delegate.setListener((DataReaderListener<Object>)tDataReaderListener);
+
+        this.delegate.setListener(new LocationListener(tDataReaderListener));
+
     }
 
     @Override
     public void setListener(DataReaderListener<T> tDataReaderListener, Collection<Class<? extends Status>> classes) {
-        this.delegate.setListener((DataReaderListener<Object>)tDataReaderListener, classes);
+        this.delegate.setListener((DataReaderListener<Object>) tDataReaderListener, classes);
     }
 
     @Override
     public void setListener(DataReaderListener<T> tDataReaderListener, Class<? extends Status>... classes) {
-        this.delegate.setListener((DataReaderListener<Object>)tDataReaderListener, classes);
+        this.delegate.setListener((DataReaderListener<Object>) tDataReaderListener, classes);
     }
+
 
     @Override
     public DataReaderQos getQos() {

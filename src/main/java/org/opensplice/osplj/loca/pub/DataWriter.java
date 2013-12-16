@@ -11,6 +11,7 @@
 
 package org.opensplice.osplj.loca.pub;
 
+import android.util.Log;
 import org.omg.dds.core.*;
 import org.opensplice.osplj.loca.core.LocationData;
 import org.omg.dds.core.status.*;
@@ -70,7 +71,7 @@ public class DataWriter<T> implements org.omg.dds.pub.DataWriter<T>{
 
         try {
 
-            Class loca = Class.forName("LocationAware");
+            Class loca = Class.forName("idl.LocationAware");
             Object locaObject = loca.newInstance();
 
             Field lat = loca.getField("latitude");
@@ -195,21 +196,25 @@ public class DataWriter<T> implements org.omg.dds.pub.DataWriter<T>{
 
         try {
 
-            Class loca = Class.forName("LocationAware");
+            Class loca = Class.forName("idl.LocationAware");
             Object locaObject = loca.newInstance();
 
             Field lat = loca.getField("latitude");
             Field lon = loca.getField("longitude");
 
+
             lat.set(locaObject, l.getLatitude());
             lon.set(locaObject, l.getLongitude());
+
 
             Object o = delegateClass.newInstance();
 
             loc.set(o, locaObject);
             val.set(o, t);
 
+
             this.delegate.write(o);
+
 
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
@@ -220,24 +225,6 @@ public class DataWriter<T> implements org.omg.dds.pub.DataWriter<T>{
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
         }
-
-        /*try {
-
-            Object o = delegateClass.newInstance();
-
-            loc.set(o, l);
-            val.set(o, t);
-
-            this.delegate.write(o);
-
-        } catch (InstantiationException e) {
-            e.printStackTrace();
-            Log.e("BBB","ERR: " + e);
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-            Log.e("CCC","ERR: " + e);
-        }
-        */
 
     }
 

@@ -30,6 +30,7 @@ public class SampleInfo implements Serializable
 
     public SampleInfo(SampleState sampleState, ReaderHistoryCache.ReaderInstance<?> context)
     {
+
         this.sampleState = sampleState;
         if(context != null)
         {
