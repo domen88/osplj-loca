@@ -26,13 +26,10 @@ import org.omg.dds.topic.PublicationBuiltinTopicData;
 import org.omg.dds.topic.Topic;
 import org.omg.dds.topic.TopicDescription;
 import org.opensplice.osplj.loca.core.DataAvailableEventLoc;
+import org.opensplice.osplj.loca.core.LocationData;
 import org.opensplice.osplj.loca.core.LocationProvider;
-import org.opensplice.osplj.sub.ReaderHistoryCache;
-import org.opensplice.osplj.sub.SampleData;
-import org.opensplice.osplj.utils.JavaScriptFilter;
 
-import javax.script.ScriptException;
-import java.lang.reflect.Field;
+import java.lang.reflect.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
@@ -48,21 +45,27 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
     private Field val;
     private final LocationProvider lp;
     private final DataReaderQos drqos;
+    private final Filter filter;
 
-    public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos) {
-        this(sub, topic, qos, LocationProvider.create());
+    public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocusFilter<T> tFilter) {
+        this(sub, topic, qos, LocationProvider.create(), tFilter);
     }
 
     public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocationProvider lp) {
+        this(sub, topic, qos, lp, new LocusFilter<T>(6373.00));
+    }
+
+    public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocationProvider lp, LocusFilter<T> tFilter) {
 
 
         this.drqos = qos;
-
         this.lp = lp;
 
         String delegateType = topic.getTypeName() + TYPE_SUFFIX;
 
         this.topicType = topic.getTypeName();
+
+        Log.d("AAA", "nel construttore");
 
         try {
 
@@ -70,33 +73,65 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
             loc = delegateClass.getField("l");
             val = delegateClass.getField("v");
 
+            Log.d("AAA", "delegateClass");
+
+            Object test_o = delegateClass.newInstance();
+
+            Class cls = Class.forName("idl.LocationAware");
+
+            //Constructor constructorLocation = cls.getConstructor(Double.class, Double.class);
+            //Object location_o = constructorLocation.newInstance(2.0,2.0);
+
+
+            //loc.set(test_o, location_o);
+            //val.set(test_o, null);
+
+            //Log.d("AAA", "Prima di filter:" + location_o.toString());
+
+
+            //--------PARAMS----------
+            // params[0] --> latitude
+            // params[1] --> longitude
+            // params[2] --> radius
+
+          /*  f = new JavaScriptFilter<Object>( "( ( Math.acos( ( Math.sin(Math.PI * params[0] / 180 ) " +
+                                              "* ( Math.sin( Math.PI * data.l.latitude / 180 ) ) )"    +
+                                              "+ ( Math.cos( Math.sin( Math.PI * params[0] / 180 ) ) " +
+                                              "* ( Math.cos( Math.PI * data.l.latitude / 180 ) )"      +
+                                              "* ( Math.cos( Math.abs((Math.PI * params[1] / 180 ) "   +
+                                              "- ( Math.PI * data.l.longitude / 180 ) ) ) ) ) )"       +
+                                              "* 6372 ) < params[2] )");//, test_o, 2.0, 2.0, 2.0);       */
+
+
         } catch (ClassNotFoundException e) {
+            Log.d("AAA", "ClassNotFoundException");
             e.printStackTrace();
         } catch (NoSuchFieldException e) {
+            Log.d("AAA", "NoSuchFieldException");
+            e.printStackTrace();
+        //} catch (NoSuchMethodException e) {
+        //    Log.d("AAA", "NoSuchMethodException");
+        //    e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            Log.d("AAA", "IllegalAccessException");
+            e.printStackTrace();
+       // } catch (InvocationTargetException e) {
+       //     Log.d("AAA", "InvocationTargetException");
+       //     e.printStackTrace();
+        } catch (InstantiationException e) {
+            Log.d("AAA", "InstantiationException");
             e.printStackTrace();
         }
 
+
+
         Topic<?> tp = sub.getParent().createTopic(topic.getName() + TYPE_SUFFIX, delegateClass);//, topic.getQos(), null,
         //null);
-
-        /* -------------------------JAVASCRIPT FILTER----------------------------*/
-//        try {
-//
-//            ContentFilter filter =
-//            PolicyFactory.getPolicyFactory(getEnvironment()) .ContentFilter()
-//                    .withFilter(
-//                            new JavaScriptFilter<T>("data.ID==params[0]"));
-//
-//            drqos.withPolicies(filter);
-//
-//        } catch (ScriptException e) {
-//           e.printStackTrace();
-//        }
-//
-
+        this.filter = tFilter.setFilter(this.lp);
         this.delegate = (org.omg.dds.sub.DataReader<Object>)sub.createDataReader(tp,drqos);
 
     }
+
 
     @Override
     public <OTHER> org.omg.dds.sub.DataReader<OTHER> cast() {
@@ -191,8 +226,10 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
     @Override
     public Sample.Iterator<T> read() {
 
+        LocationData l1 = lp.getLocation();
 
-        Iterator<Sample<Object>> it = delegate.read();
+        DataReader.Selector<Object> selector = delegate.select().Content(this.filter, l1.getLatitude(), l1.getLongitude());
+        Iterator<Sample<Object>> it = delegate.read(selector);
         List<LocationAwareSample<T>> l = new ArrayList<LocationAwareSample<T>>();
 
         while (it.hasNext()) {

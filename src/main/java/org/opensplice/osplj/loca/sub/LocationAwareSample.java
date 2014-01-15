@@ -101,7 +101,7 @@ public class LocationAwareSample<T> implements Sample<T> {
 
     }
 
-    private Sample<T> delegate;
+    private final Sample<T> delegate;
     private final Object loc;
     private final Object val;
     private final LocationProvider lp;
@@ -122,6 +122,21 @@ public class LocationAwareSample<T> implements Sample<T> {
     }
 
     public LocationData getLocation(){
+
+        try{
+
+            Field lat = this.loc.getClass().getField("latitude");
+            Field lon = this.loc.getClass().getField("longitude");
+
+            Double latitude = (Double) lat.get(this.loc);
+            Double longitude = (Double) lon.get(this.loc);
+
+
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
 
         return lp.getLocation();
 

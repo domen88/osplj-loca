@@ -194,6 +194,10 @@ public class DataWriter<T> implements org.omg.dds.pub.DataWriter<T>{
 
         LocationData l = lp.getLocation();
 
+        if ( l == null) {
+            return;
+        }
+
         try {
 
             Class loca = Class.forName("idl.LocationAware");

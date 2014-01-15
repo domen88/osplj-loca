@@ -11,6 +11,7 @@
 
 package org.opensplice.osplj.loca.core;
 
+import android.app.Activity;
 import android.content.Context;
 import android.app.Application;
 import android.location.Criteria;
@@ -67,7 +68,7 @@ public class AndroidLocationProvider extends LocationProvider implements Locatio
             //Get location from the given provider
             location = locationManager.getLastKnownLocation(provider);
 
-            locationManager.requestLocationUpdates(provider, 20000, 1, this);
+            locationManager.requestLocationUpdates(provider, 0, 0, this);
 
             if (location!=null) {
                 onLocationChanged(location);
