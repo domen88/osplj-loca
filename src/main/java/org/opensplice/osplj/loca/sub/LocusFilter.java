@@ -16,16 +16,24 @@ import org.opensplice.osplj.loca.core.LocationProvider;
 public class LocusFilter<T> implements DataReader.Filter<T> {
 
     private final Double r;
+    private final Double garbage;
 
-    public LocusFilter(Double radius){
+    public LocusFilter(Double radius, Double garbage){
 
         this.r = radius;
+        this.garbage = garbage;
 
     }
 
     public DataReader.Filter setFilter(LocationProvider lp){
 
         return new LocusFilterImpl<Object>(lp, this.r);
+
+    }
+
+    public DataReader.Filter setGarbage(LocationProvider lp){
+
+        return new LocusFilterImpl<Object>(lp, this.garbage);
 
     }
 

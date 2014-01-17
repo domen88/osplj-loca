@@ -63,12 +63,18 @@ public class AndroidLocationProvider extends LocationProvider implements Locatio
         //Getting the name of provider that meets the Criteria
         provider = locationManager.getBestProvider(criteria, false);
 
+        //final String provider1 = provider;
+
         if ( provider != null && !provider.equals("") ) {
 
             //Get location from the given provider
             location = locationManager.getLastKnownLocation(provider);
 
-            locationManager.requestLocationUpdates(provider, 0, 0, this);
+            try{
+                locationManager.requestLocationUpdates(provider, 0, 2000, this);
+            } catch (RuntimeException e){
+                e.printStackTrace();
+            }
 
             if (location!=null) {
                 onLocationChanged(location);
@@ -112,9 +118,7 @@ public class AndroidLocationProvider extends LocationProvider implements Locatio
 
         } else {
 
-            locationData = new LocationData();
-            locationData.setLatitude(location.getLatitude());
-            locationData.setLongitude(location.getLongitude());
+            locationData = new LocationData(location.getLongitude(),location.getLatitude());
 
             return locationData;
 

@@ -25,8 +25,9 @@ import org.opensplice.osplj.loca.core.LocationProvider;
 import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 public class DataWriter<T> implements org.omg.dds.pub.DataWriter<T>{
 
@@ -187,6 +188,39 @@ public class DataWriter<T> implements org.omg.dds.pub.DataWriter<T>{
     @Override
     public void unregisterInstance(InstanceHandle instanceHandle, T t, long l, TimeUnit timeUnit) throws TimeoutException {
         this.delegate.unregisterInstance(instanceHandle, t, l, timeUnit);
+    }
+
+    public void write(T t, long vp, long ap){
+
+        final ScheduledExecutorService scheduler =
+                Executors.newScheduledThreadPool(1);
+
+        final T t1 = t;
+
+        final LocationData l = lp.getLocation();
+
+        Log.d("AAA", "Inside Write time");
+
+
+        final Runnable beeper = new Runnable() {
+            public void run() {
+                try {
+                    DataWriter.this.write(t1,l);
+                    Log.d("AAA", "Write time plus");
+                } catch (TimeoutException e) {
+                    e.printStackTrace();
+                }
+            }
+        };
+
+        final ScheduledFuture<?> beeperHandle =
+                    scheduler.scheduleAtFixedRate(beeper, 0, ap, SECONDS);
+
+        scheduler.schedule(new Runnable() {
+                public void run() { beeperHandle.cancel(true); }
+        }, vp, SECONDS);
+
+
     }
 
     @Override

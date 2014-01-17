@@ -31,8 +31,9 @@ import org.opensplice.osplj.loca.core.LocationProvider;
 
 import java.lang.reflect.*;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
+import java.util.concurrent.*;
+
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 
 public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
@@ -44,15 +45,21 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
     private Field loc;
     private Field val;
     private final LocationProvider lp;
+    private LocationData locationData = null;
     private final DataReaderQos drqos;
     private final Filter filter;
+    private final Filter garbageFilter;
+    private final ScheduledExecutorService scheduler =
+            Executors.newScheduledThreadPool(1);
 
     public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocusFilter<T> tFilter) {
         this(sub, topic, qos, LocationProvider.create(), tFilter);
+        this.locationData = null;
     }
 
-    public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocationProvider lp) {
-        this(sub, topic, qos, lp, new LocusFilter<T>(6373.00));
+    public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocationData l, LocusFilter<T> tFilter) {
+        this(sub, topic, qos, LocationProvider.create(), tFilter);
+        this.locationData = l;
     }
 
     public DataReader(Subscriber sub, Topic<T> topic, DataReaderQos qos, LocationProvider lp, LocusFilter<T> tFilter) {
@@ -60,6 +67,7 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
         this.drqos = qos;
         this.lp = lp;
+        this.lp.getLocation();
 
         String delegateType = topic.getTypeName() + TYPE_SUFFIX;
 
@@ -128,7 +136,27 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
         Topic<?> tp = sub.getParent().createTopic(topic.getName() + TYPE_SUFFIX, delegateClass);//, topic.getQos(), null,
         //null);
         this.filter = tFilter.setFilter(this.lp);
+        this.garbageFilter = tFilter.setGarbage(this.lp);
         this.delegate = (org.omg.dds.sub.DataReader<Object>)sub.createDataReader(tp,drqos);
+        this.garbageCollector();
+
+    }
+
+    public void garbageCollector(){
+
+        this.scheduler.scheduleAtFixedRate(new Runnable() {
+            public void run() {
+                try{
+                    LocationData l1 = DataReader.this.lp.getLocation();
+                    delegate.select().Content(DataReader.this.garbageFilter, l1.getLatitude(), l1.getLongitude()).take();
+                } catch (Exception e){
+                    e.printStackTrace();
+                    Log.d("AAA", "Excp: " + e.getLocalizedMessage());
+                }
+                Log.d("AAA","Garbage Collector");
+            }
+        }, 0, 10*60, TimeUnit.SECONDS);
+
 
     }
 
@@ -226,7 +254,13 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
     @Override
     public Sample.Iterator<T> read() {
 
-        LocationData l1 = lp.getLocation();
+        LocationData l1;
+
+        if (this.locationData == null){
+            l1 = lp.getLocation();
+        }else{
+            l1 = this.locationData;
+        }
 
         DataReader.Selector<Object> selector = delegate.select().Content(this.filter, l1.getLatitude(), l1.getLongitude());
         Iterator<Sample<Object>> it = delegate.read(selector);
@@ -564,6 +598,7 @@ public class DataReader<T> implements org.omg.dds.sub.DataReader<T>{
 
     @Override
     public void close() {
+        this.scheduler.shutdownNow();
         this.delegate.close();
     }
 
