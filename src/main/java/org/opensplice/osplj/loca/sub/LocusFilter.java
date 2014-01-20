@@ -33,7 +33,7 @@ public class LocusFilter<T> implements DataReader.Filter<T> {
 
     public DataReader.Filter setGarbage(LocationProvider lp){
 
-        return new LocusFilterImpl<Object>(lp, this.garbage);
+        return new GarbageFilter<Object>(lp, this.garbage);
 
     }
 
